@@ -16,7 +16,7 @@ void executeSimulation(Params params, std::vector<Car> cars) {
 
         for (int step = 0; step < params.steps; ++step) {
                 cars_old = cars;  // Capture state before this timestep
-                
+
                 // 1. Generate RNG results
                 generateRNGResults(params, start, dec);
 
@@ -35,10 +35,14 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                 // 6. Move cars
                 moveCars(cars, params);
 
+#ifdef DEBUG
                 reportResult(cars, step);
+#endif
         }
 
+#ifdef DEBUG
         reportFinalResult(cars);
+#endif
 }
 
 
