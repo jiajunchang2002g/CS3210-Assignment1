@@ -96,8 +96,69 @@ bool avoid_crash(std::vector<Car>& cars, int id, int dist, int v_i, int v_front)
         }
         return false;
 }
+
 // --------------------------------------------------
-// Helper: update velocities for all cars in lanes
+// Helper: update velocity of a single car (uses cars_old as read-only)
+// --------------------------------------------------
+inline void updateVelocityForCar(Params params,
+                std::vector<Car>& cars,
+                const std::vector<Car>& cars_old,
+                std::vector<bool>& ss_flags,
+                const std::vector<bool>& start,
+                const std::vector<bool>& dec,
+                const std::vector<int>& lane,
+                int index)
+{
+        int id = lane[index];
+        int next_id = lane[(index + 1) % lane.size()];
+        int dist = find_dist(params, cars, id, next_id);
+        int v_front = cars_old[next_id].v;   // old velocity of car in front
+
+        bool rule1_applied = false;
+
+        if (ss_flags[id]) {
+                cars[id].v = 1;
+                ss_flags[id] = false;
+                rule1_applied = true;
+        }
+
+        if (cars[id].v == 0 && dist > 1) {
+                if (start[id]) {
+                        if (cars[id].v + 1 < dist) {
+                                cars[id].v = std::min(params.vmax, cars[id].v + 1);
+                        }
+                } else {
+                        ss_flags[id] = true;
+                }
+        } else {
+                bool rule2_applied = false;
+                if (dist <= cars[id].v) {
+                        if (cars[id].v < v_front || cars[id].v < 2) {
+                                cars[id].v = std::max(0, dist - 1);
+                                rule2_applied = true;
+                        } else {
+                                cars[id].v = std::max(0, std::min(dist - 1, cars[id].v - 2));
+                                rule2_applied = true;
+                        }
+                } else if (dist <= 2 * cars[id].v && cars[id].v >= v_front) {
+                        cars[id].v = cars[id].v - floor((cars[id].v - v_front) / 2.0);
+                        rule2_applied = true;
+                }
+
+                if (!rule2_applied && !rule1_applied) {
+                        if (cars[id].v + 1 < dist) {
+                                cars[id].v = std::min(params.vmax, cars[id].v + 1);
+                        }
+                }
+        }
+
+        if (dec[id]) {
+                cars[id].v = std::max(0, cars[id].v - 1);
+        }
+}
+
+// --------------------------------------------------
+// Main: update velocities lane by lane (lane0 -> lane1)
 // --------------------------------------------------
 void updateVelocities(Params params, std::vector<Car>& cars,
                 std::vector<Car>& cars_old,
@@ -106,69 +167,34 @@ void updateVelocities(Params params, std::vector<Car>& cars,
                 const std::vector<bool>& start,
                 const std::vector<bool>& dec)
 {
-        for (int lane_idx = 0; lane_idx < 2; ++lane_idx) {
-                auto& lane = lanes[lane_idx];
-                int n = lane.size();
-                for (int index = 0; index < n; ++index) {
-                        int id = lane[index];
-                        int next_id = lane[(index + 1) % n];
-                        int dist = find_dist(params, cars, id, next_id);
-                        int v_front = cars_old[next_id].v;
-
-                        cars_old[id] = cars[id];
-
-                        bool rule1_applied = false;
-
-                        if (ss_flags[id]) {
-                                // Slow Start Part 2
-                                cars[id].v = 1;
-                                ss_flags[id] = false;
-                                rule1_applied = true;
-                        }  
-
-                        if (cars[id].v == 0 && dist > 1) {
-                                if (start[id]) {
-                                        // Step 3: Acceleration
-                                        if (cars[id].v + 1 < dist) {
-                                                cars[id].v = std::min(params.vmax, cars[id].v + 1);
-                                        }
-                                } else {
-                                        // Slow Start Part 1
-                                        ss_flags[id] = true;
-                                }
-                        } else {
-                                // Step 2: Avoid crashing
-                                bool rule2_applied = false;
-
-                                if (dist <= cars[id].v) {
-                                        if (cars[id].v < v_front || cars[id].v < 2) {
-                                                cars[id].v = std::max(0, dist - 1);
-                                                rule2_applied = true;
-                                        } else {
-                                                cars[id].v = std::max(0, std::min(dist - 1, cars[id].v - 2));
-                                                rule2_applied = true;
-                                        }
-                                } else if (dist <= 2 * cars[id].v && cars[id].v >= v_front) {
-                                        cars[id].v = cars[id].v - floor((cars[id].v - v_front) / 2.0);
-                                        rule2_applied = true;
-                                }
-
-                                // Step 3: Acceleration
-                                if (!rule2_applied && !rule1_applied) {
-                                        if (cars[id].v + 1 < dist) {
-                                                cars[id].v = std::min(params.vmax, cars[id].v + 1);
-                                        }
-                                }
-                        }
-
-                        // Step 4: Random deceleration
-                        if (dec[id]) {
-                                cars[id].v = std::max(0, cars[id].v - 1);
-                        }
-                }
+        // --- Step 1: snapshot cars into cars_old (parallel copy) ---
+#pragma omp parallel for
+        for (int i = 0; i < (int)cars.size(); i++) {
+                cars_old[i] = cars[i];
         }
-}
 
+        // --- Step 2: parallel update lane by lane ---
+#pragma omp parallel
+        {
+                // -------- Lane 0 --------
+#pragma omp for nowait
+                for (int index = 0; index < (int)lanes[0].size(); ++index) {
+                        updateVelocityForCar(params, cars, cars_old,
+                                        ss_flags, start, dec,
+                                        lanes[0], index);
+                }
+
+#pragma omp barrier   // all threads wait before lane 1
+
+                // -------- Lane 1 --------
+#pragma omp for
+                for (int index = 0; index < (int)lanes[1].size(); ++index) {
+                        updateVelocityForCar(params, cars, cars_old,
+                                        ss_flags, start, dec,
+                                        lanes[1], index);
+                }
+        } // end parallel
+}
 
 // --------------------------------------------------
 // Helper: generate RNG results
