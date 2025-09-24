@@ -12,10 +12,10 @@ void executeSimulation(Params params, std::vector<Car> cars) {
         // init lanes
         std::vector<std::vector<int>> lanes(2);
         rebuildAndSortLanes(cars, lanes);
-        std::vector<Car> cars_old(params.n);
 
         for (int step = 0; step < params.steps; ++step) {
-                cars_old = cars;  // Capture state before this timestep
+                // save a copy
+                std::vector<Car> cars_old = parallel_copy(cars);
 
                 // 1. Generate RNG results
                 generateRNGResults(params, start, dec);

@@ -6,6 +6,7 @@
 
 #include <omp.h>
 
+
 // --------------------------------------------------
 // Helper: find distance btw two cars
 // --------------------------------------------------
@@ -128,8 +129,6 @@ void updateVelocities(Params params, std::vector<Car>& cars,
                         if (cars[id].v == 0 && dist > 1) {
                                 if (start[id]) {
                                         // Step 3: Acceleration
-                                        // cars[id].v = std::min(dist - 1, std::min(cars[id].v + 1, params.vmax));
-
                                         if (cars[id].v + 1 < dist) {
                                                 cars[id].v = std::min(params.vmax, cars[id].v + 1);
                                         }
@@ -139,9 +138,8 @@ void updateVelocities(Params params, std::vector<Car>& cars,
                                 }
                         } else {
                                 // Step 2: Avoid crashing
-                                // bool rule2_applied = avoid_crash(cars, id, dist, cars[id].v, v_front);
                                 bool rule2_applied = false;
-                                // Step 2: Avoid crashing
+
                                 if (dist <= cars[id].v) {
                                         if (cars[id].v < v_front || cars[id].v < 2) {
                                                 cars[id].v = std::max(0, dist - 1);
@@ -157,13 +155,10 @@ void updateVelocities(Params params, std::vector<Car>& cars,
 
                                 // Step 3: Acceleration
                                 if (!rule2_applied && !rule1_applied) {
-                                        // cars[id].v = std::min(dist - 1, std::min(cars[id].v + 1, params.vmax));
-
                                         if (cars[id].v + 1 < dist) {
                                                 cars[id].v = std::min(params.vmax, cars[id].v + 1);
                                         }
                                 }
-
                         }
 
                         // Step 4: Random deceleration
