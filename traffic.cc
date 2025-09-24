@@ -172,6 +172,7 @@ void updateVelocities(Params params, std::vector<Car>& cars,
         for (int i = 0; i < (int)cars.size(); i++) {
                 cars_old[i] = cars[i];
         }
+        // implicit barrier for
 
         // --- Step 2: parallel update lane by lane ---
 #pragma omp parallel
@@ -183,8 +184,6 @@ void updateVelocities(Params params, std::vector<Car>& cars,
                                         ss_flags, start, dec,
                                         lanes[0], index);
                 }
-
-#pragma omp barrier   // all threads wait before lane 1
 
                 // -------- Lane 1 --------
 #pragma omp for
