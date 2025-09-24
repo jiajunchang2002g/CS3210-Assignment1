@@ -31,7 +31,6 @@ void updateVelocities(Params params, std::vector<Car>& cars,
 
 void generateRNGResults(Params params, std::vector<bool>& start, std::vector<bool>& dec); 
 
-void rebuildAndSortLanes(std::vector<Car>& cars, std::vector<std::vector<int>>& lanes); 
+void rebuildAndSortLanes(const std::vector<Car>& cars, std::vector<std::vector<int>>& lanes); 
 
-void moveCars(std::vector<Car>& cars, Params params); 
-
+void moveCars(std::vector<Car>& cars, Params params);

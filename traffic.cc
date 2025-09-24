@@ -208,31 +208,50 @@ void generateRNGResults(Params params, std::vector<bool>& start, std::vector<boo
 // --------------------------------------------------
 // Helper: rebuild lanes and sort by position
 // --------------------------------------------------
-void rebuildAndSortLanes(std::vector<Car>& cars, std::vector<std::vector<int>>& lanes) {
-        lanes[0].clear();
-        lanes[1].clear();
-        for (int i = 0; i < int(cars.size()); ++i) {
-                Car car = cars[i];
-                lanes[car.lane].push_back(car.id);
+void rebuildAndSortLanes(const std::vector<Car>& cars, std::vector<std::vector<int>>& lanes) {
+        int n = cars.size();
+        lanes[0].resize(n);
+        lanes[1].resize(n);
+
+        int counter0 = 0;
+        int counter1 = 0;
+
+#pragma omp parallel for
+        for (int i = 0; i < n; i++) {
+                const Car& car = cars[i];
+                if (car.lane == 0) {
+#pragma omp atomic 
+                        counter0++; 
+                        lanes[0][counter0] = car.id;
+                } else {
+#pragma omp atomic 
+                        counter1++;
+                        lanes[1][counter1] = car.id;
+                }
         }
+
+        // resize to actual number of cars
+        lanes[0].resize(counter0);
+        lanes[1].resize(counter1);
+
         // --- Step 2: sort each lane in parallel ---
-    #pragma omp parallel sections
-    {
-        #pragma omp section
+#pragma omp parallel sections
         {
-            std::sort(lanes[0].begin(), lanes[0].end(),
-                      [&](int a, int b) {
-                          return cars[a].position < cars[b].position;
-                      });
+#pragma omp section
+                {
+                        std::sort(lanes[0].begin(), lanes[0].end(),
+                                        [&](int a, int b) {
+                                        return cars[a].position < cars[b].position;
+                                        });
+                }
+#pragma omp section
+                {
+                        std::sort(lanes[1].begin(), lanes[1].end(),
+                                        [&](int a, int b) {
+                                        return cars[a].position < cars[b].position;
+                                        });
+                }
         }
-        #pragma omp section
-        {
-            std::sort(lanes[1].begin(), lanes[1].end(),
-                      [&](int a, int b) {
-                          return cars[a].position < cars[b].position;
-                      });
-        }
-    }
 } 
 
 // --------------------------------------------------
