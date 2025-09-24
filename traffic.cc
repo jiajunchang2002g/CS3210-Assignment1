@@ -205,7 +205,6 @@ void generateRNGResults(Params params, std::vector<bool>& start, std::vector<boo
         }
 }
 
-
 // --------------------------------------------------
 // Helper: rebuild lanes and sort by position
 // --------------------------------------------------
@@ -214,13 +213,27 @@ void rebuildAndSortLanes(std::vector<Car>& cars, std::vector<std::vector<int>>& 
         lanes[1].clear();
         for (int i = 0; i < int(cars.size()); ++i) {
                 Car car = cars[i];
-                lanes[car.lane].push_back(car.id); 
+                lanes[car.lane].push_back(car.id);
         }
-        for (int i = 0; i < 2; ++i) {
-                std::sort(lanes[i].begin(), lanes[i].end(),
-                                [&](int a, int b){ return cars[a].position < cars[b].position; }); // O(n log n)
+        // --- Step 2: sort each lane in parallel ---
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+            std::sort(lanes[0].begin(), lanes[0].end(),
+                      [&](int a, int b) {
+                          return cars[a].position < cars[b].position;
+                      });
         }
-}
+        #pragma omp section
+        {
+            std::sort(lanes[1].begin(), lanes[1].end(),
+                      [&](int a, int b) {
+                          return cars[a].position < cars[b].position;
+                      });
+        }
+    }
+} 
 
 // --------------------------------------------------
 // Helper: move cars according to current velocity
