@@ -220,13 +220,15 @@ void rebuildAndSortLanes(const std::vector<Car>& cars, std::vector<std::vector<i
         for (int i = 0; i < n; i++) {
                 const Car& car = cars[i];
                 if (car.lane == 0) {
-#pragma omp atomic 
-                        counter0++; 
-                        lanes[0][counter0] = car.id;
+                        int idx;
+#pragma omp atomic capture
+                        idx = counter0++;
+                        lanes[0][idx] = car.id;
                 } else {
-#pragma omp atomic 
-                        counter1++;
-                        lanes[1][counter1] = car.id;
+                        int idx;
+#pragma omp atomic capture
+                        idx = counter1++;
+                        lanes[1][idx] = car.id;
                 }
         }
 
