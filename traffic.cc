@@ -17,7 +17,7 @@ void decideLaneChangeForCar(const Params& params,
                 const std::vector<Car>& cars,
                 const std::vector<int>& lane,
                 const std::vector<int>& other_lane,
-                std::vector<bool>& lane_flags,
+                std::vector<uint8_t>& lane_flags,
                 int idx)
 {
         int id = lane[idx];
@@ -36,8 +36,9 @@ void decideLaneChangeForCar(const Params& params,
         int d3 = find_dist(params, cars, id, front);
         int v0 = cars[back].v;
 
-        if (d0 > 0 && d2 < d3 && v1 >= d2 && d0 > v0)
+        if (d0 > 0 && d2 < d3 && v1 >= d2 && d0 > v0) {
                 lane_flags[id] = true;
+        }
 }
 // --------------------------------------------------
 // Helper: update velocity of a single car (uses cars_old as read-only)
@@ -45,9 +46,9 @@ void decideLaneChangeForCar(const Params& params,
 void updateVelocityForCar(Params params,
                 std::vector<Car>& cars,
                 const std::vector<Car>& cars_old,
-                std::vector<bool>& ss_flags,
-                const std::vector<bool>& start,
-                const std::vector<bool>& dec,
+                std::vector<uint8_t>& ss_flags,
+                const std::vector<uint8_t>& start,
+                const std::vector<uint8_t>& dec,
                 const std::vector<int>& lane,
                 int index)
 {
