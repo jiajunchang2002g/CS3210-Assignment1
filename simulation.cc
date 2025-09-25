@@ -10,10 +10,10 @@ namespace traffic_prng {
 }
 
 void executeSimulation(Params params, std::vector<Car> cars) {
-        std::vector<bool> start(params.n);
-        std::vector<bool> dec(params.n);
-        std::vector<bool> ss_flags(params.n, false);
-        std::vector<bool> lane_flags(params.n, false);
+        std::vector<char> start(params.n);
+        std::vector<char> dec(params.n);
+        std::vector<char> ss_flags(params.n, false);
+        std::vector<char> lane_flags(params.n, false);
         std::vector<Car> cars_old(params.n);
 
         std::vector<std::vector<int>> lanes(2);
@@ -102,7 +102,7 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                                 updateVelocityForCar(params, cars, cars_old, ss_flags, start, dec, lanes[1], idx);
                         }
                         // --- Implicit barrier --- 
-#pragma omp for 
+#pragma omp for simd
                         // --- Step 7: move cars ---
                         for (int i = 0; i < params.n; ++i) {
                                 cars[i].position = (cars[i].position + cars[i].v) % params.L;

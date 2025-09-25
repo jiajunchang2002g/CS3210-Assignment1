@@ -11,22 +11,21 @@ int find_dist(Params params, const std::vector<Car>& cars, int back, int front) 
 }
 
 // --------------------------------------------------
-// Helper: decide lane change for a single car
+// Branchless lane change for a single car
 // --------------------------------------------------
 void decideLaneChangeForCar(const Params& params,
                 const std::vector<Car>& cars,
                 const std::vector<int>& lane,
                 const std::vector<int>& other_lane,
-                std::vector<bool>& lane_flags,
+                std::vector<char>& lane_flags,
                 int idx)
 {
         int id = lane[idx];
         int v1 = cars[id].v;
 
+        // Find closest cars in other lane
         auto it = std::lower_bound(other_lane.begin(), other_lane.end(), cars[id].position,
                         [&](int cid, int pos) { return cars[cid].position < pos; });
-
-        if (it != other_lane.end() && cars[*it].position == cars[id].position) return;
 
         int front = (it == other_lane.end()) ? other_lane[0] : *it;
         int back  = (it == other_lane.begin()) ? other_lane.back() : *(it - 1);
@@ -36,21 +35,29 @@ void decideLaneChangeForCar(const Params& params,
         int d3 = find_dist(params, cars, id, front);
         int v0 = cars[back].v;
 
-        if (d0 > 0 && d2 < d3 && v1 >= d2 && d0 > v0)
-                lane_flags[id] = true;
+        // Compute branchless mask
+        // 1 if all conditions satisfied, 0 otherwise
+        int valid_position = (it == other_lane.end() || cars[*it].position != cars[id].position);
+        int cond_mask = (d0 > 0) & (d2 < d3) & (v1 >= d2) & (d0 > v0) & valid_position;
+
+        // Apply mask
+        lane_flags[id] = cond_mask ? 1 : 0;
 }
+
+
 // --------------------------------------------------
 // Helper: update velocity of a single car (uses cars_old as read-only)
 // --------------------------------------------------
 void updateVelocityForCar(Params params,
                 std::vector<Car>& cars,
                 const std::vector<Car>& cars_old,
-                std::vector<bool>& ss_flags,
-                const std::vector<bool>& start,
-                const std::vector<bool>& dec,
+                std::vector<char>& ss_flags,
+                const std::vector<char>& start,
+                const std::vector<char>& dec,
                 const std::vector<int>& lane,
                 int index)
 {
+        // cache locality check
         int id = lane[index];
         int next_id = lane[(index + 1) % lane.size()];
         int dist = find_dist(params, cars, id, next_id);
