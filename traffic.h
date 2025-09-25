@@ -10,13 +10,13 @@ void decideLaneChangeForCar(const Params& params,
                 const std::vector<Car>& cars,
                 const std::vector<int>& lane,
                 const std::vector<int>& other_lane,
-                std::vector<uint8_t>& lane_flags,
+                std::vector<bool>& lane_flags,
                 int idx);
 
 void updateVelocityForCar(Params params, std::vector<Car>& cars,
                 const std::vector<Car>& cars_old,
-                std::vector<uint8_t>& ss_flags,
-                const std::vector<uint8_t>& start,
-                const std::vector<uint8_t>& dec,
+                std::vector<bool>& ss_flags,
+                const std::vector<bool>& start,
+                const std::vector<bool>& dec,
                 const std::vector<int>& lane,
                 int index);

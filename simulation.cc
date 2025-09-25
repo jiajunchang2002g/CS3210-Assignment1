@@ -10,31 +10,24 @@ namespace traffic_prng {
 }
 
 void executeSimulation(Params params, std::vector<Car> cars) {
-        std::vector<uint8_t> start(params.n);
-        std::vector<uint8_t> dec(params.n);
-        std::vector<uint8_t> ss_flags(params.n, false);
-        std::vector<uint8_t> lane_flags(params.n, false);
+        std::vector<bool> start(params.n);
+        std::vector<bool> dec(params.n);
+        std::vector<bool> ss_flags(params.n, false);
+        std::vector<bool> lane_flags(params.n, false);
         std::vector<Car> cars_old(params.n);
 
         std::vector<std::vector<int>> lanes(2);
         for (auto& car : cars) lanes[car.lane].push_back(car.id);
 
-        std::vector<PRNG*> prng_engines(params.n);
-        for (int id = 0; id < params.n; ++id) {
-                prng_engines[id] = new PRNG(params.seed);  
-                prng_engines[id]->discard(id * 2); 
-        }
-
         for (int step = 0; step < params.steps; ++step) {
+                // --- Step 1: generate RNG ---
+                for (int id = 0; id < params.n; ++id) {
+                        start[id] = flip_coin(params.p_start, traffic_prng::engine);
+                        dec[id] = flip_coin(params.p_dec, traffic_prng::engine);
+                }
+
 #pragma omp parallel 
                 {
-                        // --- Step 1: generate RNG ---
-#pragma omp for 
-                        for (int id = 0; id < params.n; ++id) {
-                                start[id] = static_cast<uint8_t>(flip_coin(params.p_start, prng_engines[id]));
-                                dec[id] = static_cast<uint8_t>(flip_coin(params.p_dec, prng_engines[id]));
-                                prng_engines[id]->discard((params.n - 1) * 2);
-                        }
                         // --- Step 2: make a copy of state ---
 #pragma omp for simd nowait 
                         for (int id = 0; id < params.n; ++id) {
@@ -42,11 +35,11 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                         }
 
                         // --- Step 3: decide lane changes ---
-#pragma omp for simd nowait
+#pragma omp for nowait
                         for (int i = 0; i < (int)lanes[0].size(); ++i) {
                                 decideLaneChangeForCar(params, cars, lanes[0], lanes[1], lane_flags, i);
                         }
-#pragma omp for simd
+#pragma omp for 
                         for (int i = 0; i < (int)lanes[1].size(); ++i) {
                                 decideLaneChangeForCar(params, cars, lanes[1], lanes[0], lane_flags, i);
                         }
@@ -100,11 +93,11 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                         }
 
                         // --- Step 6: update velocities lane by lane ---
-#pragma omp for simd nowait 
+#pragma omp for nowait 
                         for (int idx = 0; idx < (int)lanes[0].size(); ++idx) {
                                 updateVelocityForCar(params, cars, cars_old, ss_flags, start, dec, lanes[0], idx);
                         }
-#pragma omp for simd
+#pragma omp for 
                         for (int idx = 0; idx < (int)lanes[1].size(); ++idx) {
                                 updateVelocityForCar(params, cars, cars_old, ss_flags, start, dec, lanes[1], idx);
                         }
