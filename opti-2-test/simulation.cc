@@ -54,18 +54,6 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                         }
 
                         // --- Step 5: rebuild and sort lanes ---
-                        
-                        // opti-1-test
-                        // #pragma omp single 
-                        // {
-                        // lanes[0].clear();
-                        // lanes[1].clear();
-                        // for (auto& car : cars) {
-                        //         lanes[car.lane].push_back(car.id);
-                        // }
-                        // }
-                        
-                        // ---- Rebuild ----
 #pragma omp single 
                         {
                                 lanes[0].clear();
@@ -91,8 +79,7 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                                 lanes[0].insert(lanes[0].end(), thread_lane0.begin(), thread_lane0.end());
                                 lanes[1].insert(lanes[1].end(), thread_lane1.begin(), thread_lane1.end());
                         }
-                        // ---- End of rebuild ----
-
+                        // --- No Barrier --- (?)
 #pragma omp barrier
 #pragma omp single nowait
                         {
@@ -115,7 +102,7 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                                 updateVelocityForCar(params, cars, cars_old, ss_flags, start, dec, lanes[1], idx);
                         }
                         // --- Implicit barrier --- 
-#pragma omp for 
+#pragma omp for simd
                         // --- Step 7: move cars ---
                         for (int i = 0; i < params.n; ++i) {
                                 cars[i].position = (cars[i].position + cars[i].v) % params.L;
