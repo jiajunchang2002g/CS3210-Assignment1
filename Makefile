@@ -1,10 +1,9 @@
 CXX := g++
-CXXFLAGS := -Wall -Wextra -Werror -pedantic -std=c++20 -fopenmp
+CXXFLAGS := -Wall -Wextra -Werror -pedantic -std=c++20 -fopenmp 
 RELEASEFLAGS := -Ofast
 
-SRCS := simulation.cc common.cc
-HEADERS := common.h
-
+SRCS := simulation.cc common.cc traffic.cc
+HEADERS := common.h traffic.h
 OBJS := $(SRCS:.cc=.o)
 
 .PHONY: all clean
@@ -20,4 +19,5 @@ sim.perf: $(SRCS) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(RELEASEFLAGS) $(SRCS) -o $@
 
 clean:
-	rm -f sim.debug sim.perf
+	rm -f sim.debug sim.perf $(OBJS)
+
