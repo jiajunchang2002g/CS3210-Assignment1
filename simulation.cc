@@ -102,7 +102,7 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                                 updateVelocityForCar(params, cars, cars_old, ss_flags, start, dec, lanes[1], idx);
                         }
                         // --- Implicit barrier --- 
-#pragma omp for simd
+#pragma omp for 
                         // --- Step 7: move cars ---
                         for (int i = 0; i < params.n; ++i) {
                                 cars[i].position = (cars[i].position + cars[i].v) % params.L;
