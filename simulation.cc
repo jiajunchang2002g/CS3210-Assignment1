@@ -58,29 +58,11 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                         {
                                 lanes[0].clear();
                                 lanes[1].clear();
-                                std::vector<std::vector<int>> local_lanes0;
-                                std::vector<std::vector<int>> local_lanes1;
-                        }
-                        // Each thread inits its own array
-                        std::vector<int> thread_lane0, thread_lane1;
-                        // Each thread does some work pushing onto its own array
-#pragma omp for
-                        for (int i = 0; i < int(cars.size()); ++i) {
-                                if (cars[i].lane == 0) {
-                                        thread_lane0.push_back(cars[i].id);
-                                } else {
-                                        thread_lane1.push_back(cars[i].id);
+                                for (int i = 0; i < int(cars.size()); ++i) {
+                                        Car car = cars[i];
+                                        lanes[car.lane].push_back(car.id);
                                 }
                         }
-                        // --- Implicit Barrier ---
-                        // Merge the work done
-#pragma omp critical
-                        {
-                                lanes[0].insert(lanes[0].end(), thread_lane0.begin(), thread_lane0.end());
-                                lanes[1].insert(lanes[1].end(), thread_lane1.begin(), thread_lane1.end());
-                        }
-                        // --- No Barrier --- (?)
-#pragma omp barrier
 #pragma omp single nowait
                         {
                                 std::sort(lanes[0].begin(), lanes[0].end(),
@@ -102,7 +84,7 @@ void executeSimulation(Params params, std::vector<Car> cars) {
                                 updateVelocityForCar(params, cars, cars_old, ss_flags, start, dec, lanes[1], idx);
                         }
                         // --- Implicit barrier --- 
-#pragma omp for simd
+#pragma omp for 
                         // --- Step 7: move cars ---
                         for (int i = 0; i < params.n; ++i) {
                                 cars[i].position = (cars[i].position + cars[i].v) % params.L;
