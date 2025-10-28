@@ -174,12 +174,3 @@ This repo is provided for coursework. Check the project root for an explicit LIC
 
 - Instructor and course staff for CS3210.
 - The kseq FASTA parser included in `kseq/` (lightweight parser commonly used in bioinformatics examples).
-
----
-
-If you'd like, I can:
-
-- Inspect the `Makefile` in this repo and add exact build/run commands to this README.
-- Add short example data and a minimal Makefile target to produce a runnable demo and a small test.
-
-Tell me which you'd prefer and I'll update the README accordingly.
