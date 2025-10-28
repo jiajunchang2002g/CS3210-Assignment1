@@ -1,4 +1,4 @@
-# CS3210 — Scheduling (SCH) Assignment
+# CS3210 — Nagel–Schreckenberg model Traffic Simulator 
 
 This repository contains the code and assets for the scheduling (SCH) assignment used in CS3210. The project implements a simulation and benchmarking harness for evaluating scheduling/traffic behavior.
 
